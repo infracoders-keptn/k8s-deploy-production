@@ -13,6 +13,9 @@ def tagMatchRules = [
 ]
 
 pipeline {
+  parameters {
+    string(name: 'VERSION', defaultValue: '', description: 'The version of the application.', trim: true)
+  }
   agent {
     label 'kubegit'
   }
@@ -20,14 +23,6 @@ pipeline {
     stage('Update production versions with latest versions from staging') {
       steps {
         container('kubectl') {
-          sh "kubectl delete svc carts -n production"
-          sh "kubectl delete svc catalogue -n production"
-          sh "kubectl delete svc front-end -n production"
-          sh "kubectl delete svc orders -n production"
-          sh "kubectl delete svc payment -n production"
-          sh "kubectl delete svc queue-master -n production"
-          sh "kubectl delete svc shipping -n production"
-          sh "kubectl delete svc user -n production"
 
           sh "sed -i \"s#image: .*#image: `kubectl -n staging get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}' --field-selector=metadata.name=carts`#\" carts.yml"
           sh "sed -i \"s#image: .*#image: `kubectl -n staging get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}' --field-selector=metadata.name=catalogue`#\" catalogue.yml"
@@ -48,12 +43,14 @@ pipeline {
           script {
             def status = pushDynatraceDeploymentEvent (
               tagRule : tagMatchRules,
+              deploymentVersion: "${env.VERSION}",
               customProperties : [
                 [key: 'Jenkins Build Number', value: "${env.BUILD_ID}"],
                 [key: 'Git commit', value: "${env.GIT_COMMIT}"]
               ]
             )
           }
+
         }
       }
     }
