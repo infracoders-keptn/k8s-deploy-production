@@ -23,7 +23,15 @@ pipeline {
     stage('Update production versions with latest versions from staging') {
       steps {
         container('kubectl') {
-
+          sh "kubectl delete svc carts -n production"
+          sh "kubectl delete svc catalogue -n production"
+          sh "kubectl delete svc front-end -n production"
+          sh "kubectl delete svc orders -n production"
+          sh "kubectl delete svc payment -n production"
+          sh "kubectl delete svc queue-master -n production"
+          sh "kubectl delete svc shipping -n production"
+          sh "kubectl delete svc user -n production"
+          
           sh "sed -i \"s#image: .*#image: `kubectl -n staging get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}' --field-selector=metadata.name=carts`#\" carts.yml"
           sh "sed -i \"s#image: .*#image: `kubectl -n staging get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}' --field-selector=metadata.name=catalogue`#\" catalogue.yml"
           sh "sed -i \"s#image: .*#image: `kubectl -n staging get deployment -o jsonpath='{.items[*].spec.template.spec.containers[0].image}' --field-selector=metadata.name=front-end`#\" front-end.yml"
