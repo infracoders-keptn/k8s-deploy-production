@@ -62,3 +62,4 @@ spec:
     targetPort: 8080
   selector:
     app: front-end
+  type: LoadBalancer
